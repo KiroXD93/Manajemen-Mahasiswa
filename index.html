@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Manajemen Data Mahasiswa</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    /* ======================
+       GLOBAL STYLES
+    ====================== */
+    * {
+      box-sizing: border-box;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #2563eb, #1e40af);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      background: #ffffff;
+      width: 95%;
+      max-width: 1100px;
+      padding: 20px 25px 30px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+      color: #1e3a8a;
+    }
+
+    .subtitle {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #555;
+      font-size: 14px;
+    }
+
+    /* ======================
+       FORM STYLES
+    ====================== */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-bottom: 15px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    label {
+      font-size: 13px;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #1f2933;
+    }
+
+    input {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #2563eb;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    button {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+      transition: 0.2s;
+    }
+
+    .btn-primary { background: #2563eb; color: white; }
+    .btn-warning { background: #f59e0b; color: white; }
+    .btn-danger  { background: #dc2626; color: white; }
+    .btn-success { background: #16a34a; color: white; }
+    .btn-secondary { background: #6b7280; color: white; }
+
+    button:hover {
+      opacity: 0.85;
+      transform: translateY(-1px);
+    }
+
+    /* ======================
+       SEARCH & TABLE
+    ====================== */
+    .top-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    thead {
+      background: #0000ff;
+      color: white;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #ddd;
+      text-align: center;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #f3f4f6;
+    }
+
+    tbody tr:hover {
+      background: #e0e7ff;
+    }
+
+    .action-btns button {
+      padding: 6px 10px;
+      font-size: 12px;
+      margin: 0 2px;
+      border-radius: 6px;
+    }
+
+    footer {
+      margin-top: 16px;
+      font-size: 12px;
+      text-align: center;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Aplikasi Manajemen Data Mahasiswa</h1>
+
+    <!-- FORM INPUT -->
+    <div class="form-grid">
+      <div class="form-group">
+        <label>NIM (12 Digit)</label>
+        <input type="text" id="nim" placeholder="Contoh: 201011400001" />
+      </div>
+      <div class="form-group">
+        <label>Nama</label>
+        <input type="text" id="nama" placeholder="Nama Lengkap" />
+      </div>
+      <div class="form-group">
+        <label>Program Studi</label>
+        <input type="text" id="prodi" placeholder="Teknik Informatika" />
+      </div>
+      <div class="form-group">
+        <label>Semester</label>
+        <input type="number" id="semester" placeholder="1 - 8" />
+      </div>
+    </div>
+
+    <!-- BUTTONS -->
+    <div class="btn-group">
+      <button class="btn-primary" onclick="tambahData()">Tambah</button>
+      <button class="btn-warning" onclick="editData()">Edit</button>
+      <button class="btn-danger" onclick="hapusData()">Hapus</button>
+      <button class="btn-success" onclick="bubbleSort()">Bubble Sort (NIM)</button>
+      <button class="btn-secondary" onclick="selectionSortNama()">Selection Sort (Nama)</button>
+    </div>
+
+    <!-- SEARCH -->
+    <div class="top-bar">
+      <input class="search-box" type="text" id="search" placeholder="Cari berdasarkan NIM atau Nama..." onkeyup="searchData()" />
+    </div>
+
+    <!-- TABLE -->
+    <table>
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>NIM</th>
+          <th>Nama</th>
+          <th>Prodi</th>
+          <th>Semester</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="tabelData"></tbody>
+    </table>
+  </div>
+
+  <script>
+    /* ======================
+       DATA & REGEX
+    ====================== */
+    let defaultMahasiswa = [
+      { nim: "241011400001", nama: "Abdul", prodi: "Teknik Informatika", semester: "3" },
+      { nim: "241011400023", nama: "Afifah", prodi: "Teknik Informatika", semester: "3" },
+      { nim: "241011400045", nama: "Agistna", prodi: "Teknik Informatika", semester: "3" },
+      { nim: "241011400074", nama: "Abim", prodi: "Teknik Informatika", semester: "3" },
+      { nim: "241011400074", nama: "Akhdan", prodi: "Teknik Informatika", semester: "3" },
+      { nim: "241011400002", nama: "Fathur", prodi: "Teknik Informatika", semester: "3" },
+      { nim: "241011400007", nama: "Anas", prodi: "Teknik Informatika", semester: "3" },
+      { nim: "241011400008", nama: "Dafi", prodi: "Teknik Informatika", semester: "3" },
+      { nim: "241011400089", nama: "Deva", prodi: "Teknik Informatika", semester: "3" },
+      { nim: "241011400056", nama: "Dian", prodi: "Teknik Informatika", semester: "3" },
+      { nim: "241011400011", nama: "Dimas", prodi: "Teknik Informatika", semester: "3" },
+      { nim: "241011400012", nama: "Fikri", prodi: "Teknik Informatika", semester: "3" },
+      { nim: "241011400086", nama: "Fira", prodi: "Teknik Informatika", semester: "3" },
+      { nim: "241011400034", nama: "Ghali", prodi: "Teknik Informatika", semester: "3" },
+      { nim: "241011400207", nama: "Haidar", prodi: "Teknik Informatika", semester: "3" },
+      { nim: "241011400062", nama: "Ibnu", prodi: "Teknik Informatika", semester: "3" },
+      { nim: "241011400017", nama: "Ika", prodi: "Teknik Informatika", semester: "3" },
+      { nim: "241011400118", nama: "Tanto", prodi: "Teknik Informatika", semester: "3" },
+      { nim: "241011400853", nama: "Faiz", prodi: "Sistem Informasi", semester: "3" },
+      { nim: "241011400020", nama: "Ikhwan", prodi: "Sistem Informasi", semester: "3" },
+      { nim: "241011400578", nama: "Fachri", prodi: "Teknik Informatika", semester: "3" },
+      { nim: "241011400222", nama: "Fathir", prodi: "Teknik Informatika", semester: "3" },
+      { nim: "241011400523", nama: "Raka", prodi: "Teknik Informatika", semester: "3" },
+      { nim: "241011400974", nama: "Bayu", prodi: "Teknik Informatika", semester: "3" },
+      { nim: "241011400725", nama: "Rafly", prodi: "Teknik Informatika", semester: "3" },
+      { nim: "241011400826", nama: "Rakha", prodi: "Sistem Informasi", semester: "3" },
+      { nim: "241011400527", nama: "Randy", prodi: "Sistem Informasi", semester: "3" },
+      { nim: "241011400828", nama: "Rashad", prodi: "Teknik Informatika", semester: "3" },
+      { nim: "241011400329", nama: "Rivan", prodi: "Teknik Informatika", semester: "3" },
+      { nim: "241011400130", nama: "Satria", prodi: "Teknik Informatika", semester: "3" },
+      { nim: "241011400231", nama: "Tria", prodi: "Teknik Informatika", semester: "3" },
+      { nim: "241011400632", nama: "Yusuf", prodi: "Teknik Informatika", semester: "3" }
+    ];
+
+    let dataMahasiswa = JSON.parse(localStorage.getItem("dataMahasiswa")) || defaultMahasiswa;
+    let selectedIndex = -1;
+
+    const regexNim = /^\d{12}$/;
+    const regexNama = /^[A-Za-z ]+$/;
+
+    /* ======================
+       CRUD
+    ====================== */
+    function tambahData() {
+      const nim = document.getElementById("nim").value.trim();
+      const nama = document.getElementById("nama").value.trim();
+      const prodi = document.getElementById("prodi").value.trim();
+      const semester = document.getElementById("semester").value.trim();
+
+      if (!regexNim.test(nim)) return alert("NIM harus 12 digit angka!");
+      if (!regexNama.test(nama)) return alert("Nama hanya boleh huruf!");
+      if (prodi === "" || semester === "") return alert("Prodi & Semester wajib diisi!");
+
+      dataMahasiswa.push({ nim, nama, prodi, semester });
+      localStorage.setItem("dataMahasiswa", JSON.stringify(dataMahasiswa));
+      bersihkanForm();
+      tampilkanData(dataMahasiswa);
+      localStorage.setItem("dataMahasiswa", JSON.stringify(dataMahasiswa));
+    }
+
+    function editData() {
+      if (selectedIndex === -1) return alert("Pilih data yang ingin diedit!");
+
+      dataMahasiswa[selectedIndex] = {
+        nim: document.getElementById("nim").value,
+        nama: document.getElementById("nama").value,
+        prodi: document.getElementById("prodi").value,
+        semester: document.getElementById("semester").value,
+      };
+
+      selectedIndex = -1;
+      localStorage.setItem("dataMahasiswa", JSON.stringify(dataMahasiswa));
+      bersihkanForm();
+      tampilkanData(dataMahasiswa);
+    }
+
+    function hapusData() {
+      if (selectedIndex === -1) return alert("Pilih data yang ingin dihapus!");
+      if (confirm("Yakin ingin menghapus data ini?") === true) {
+        dataMahasiswa.splice(selectedIndex, 1);
+        localStorage.setItem("dataMahasiswa", JSON.stringify(dataMahasiswa));
+        selectedIndex = -1;
+        tampilkanData(dataMahasiswa);
+        bersihkanForm();
+      }
+    }
+
+    /* ======================
+       TAMPILKAN DATA
+    ====================== */
+    function tampilkanData(arr) {
+      const tbody = document.getElementById("tabelData");
+      tbody.innerHTML = "";
+
+      arr.forEach((mhs, index) => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${mhs.nim}</td>
+            <td>${mhs.nama}</td>
+            <td>${mhs.prodi}</td>
+            <td>${mhs.semester}</td>
+            <td class="action-btns">
+              <button class="btn-warning" onclick="pilihData(${index})">Pilih</button>
+            </td>
+          </tr>`;
+      });
+    }
+
+    function pilihData(index) {
+      selectedIndex = index;
+      const mhs = dataMahasiswa[index];
+      document.getElementById("nim").value = mhs.nim;
+      document.getElementById("nama").value = mhs.nama;
+      document.getElementById("prodi").value = mhs.prodi;
+      document.getElementById("semester").value = mhs.semester;
+    }
+
+    function bersihkanForm() {
+      document.getElementById("nim").value = "";
+      document.getElementById("nama").value = "";
+      document.getElementById("prodi").value = "";
+      document.getElementById("semester").value = "";
+    }
+
+    /* ======================
+       SEARCHING (LINEAR)
+    ====================== */
+    function searchData() {
+      const key = document.getElementById("search").value.toLowerCase();
+      const hasil = dataMahasiswa.filter(m =>
+        m.nim.includes(key) || m.nama.toLowerCase().includes(key)
+      );
+      tampilkanData(hasil);
+    }
+
+    /* ======================
+       SORTING
+    ====================== */
+    function bubbleSort() {
+      let n = dataMahasiswa.length;
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n - i - 1; j++) {
+          if (dataMahasiswa[j].nim > dataMahasiswa[j + 1].nim) {
+            [dataMahasiswa[j], dataMahasiswa[j + 1]] = [
+              dataMahasiswa[j + 1],
+              dataMahasiswa[j],
+            ];
+          }
+        }
+      }
+      tampilkanData(dataMahasiswa);
+    }
+
+    function selectionSort() {
+      let n = dataMahasiswa.length;
+      for (let i = 0; i < n; i++) {
+        let minIdx = i;
+        for (let j = i + 1; j < n; j++) {
+          if (dataMahasiswa[j].nim < dataMahasiswa[minIdx].nim) minIdx = j;
+        }
+        [dataMahasiswa[i], dataMahasiswa[minIdx]] = [
+          dataMahasiswa[minIdx],
+          dataMahasiswa[i],
+        ];
+      }
+      localStorage.setItem("dataMahasiswa", JSON.stringify(dataMahasiswa));
+      tampilkanData(dataMahasiswa);
+    }
+
+    // ======================
+    // SORTING BERDASARKAN NAMA
+    // ======================
+    function bubbleSortNama() {
+      let n = dataMahasiswa.length;
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n - i - 1; j++) {
+          if (dataMahasiswa[j].nama.toLowerCase() > dataMahasiswa[j + 1].nama.toLowerCase()) {
+            [dataMahasiswa[j], dataMahasiswa[j + 1]] = [
+              dataMahasiswa[j + 1],
+              dataMahasiswa[j],
+            ];
+          }
+        }
+      }
+      localStorage.setItem("dataMahasiswa", JSON.stringify(dataMahasiswa));
+      tampilkanData(dataMahasiswa);
+    }
+
+    function selectionSortNama() {
+      let n = dataMahasiswa.length;
+      for (let i = 0; i < n; i++) {
+        let minIdx = i;
+        for (let j = i + 1; j < n; j++) {
+          if (dataMahasiswa[j].nama.toLowerCase() < dataMahasiswa[minIdx].nama.toLowerCase()) {
+            minIdx = j;
+          }
+        }
+        [dataMahasiswa[i], dataMahasiswa[minIdx]] = [
+          dataMahasiswa[minIdx],
+          dataMahasiswa[i],
+        ];
+      }
+      localStorage.setItem("dataMahasiswa", JSON.stringify(dataMahasiswa));
+      tampilkanData(dataMahasiswa);
+    }
+  // ======================
+    // LOAD DATA SAAT HALAMAN DIBUKA
+    // ======================
+    window.onload = function () {
+      // Simpan data default ke LocalStorage jika belum ada
+      if (!localStorage.getItem("dataMahasiswa")) {
+        localStorage.setItem("dataMahasiswa", JSON.stringify(dataMahasiswa));
+      }
+      tampilkanData(dataMahasiswa);
+    };
+
+  </script>
+</body>
+</html>
